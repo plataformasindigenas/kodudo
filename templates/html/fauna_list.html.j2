@@ -1,0 +1,32 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ title }} - Fauna Bororo{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+<p class="meta">Total: {{ data | length }} entries</p>
+
+{% for item in data %}
+<div class="item">
+    <div class="item-name">{{ item.name_bororo }}</div>
+    {% if item.name_portuguese %}
+    <div class="item-portuguese">{{ item.name_portuguese }}</div>
+    {% endif %}
+    {% if item.scientific_name %}
+    <div class="item-scientific">{{ item.scientific_name }}</div>
+    {% endif %}
+    {% if item.category %}
+    <div>Category: {{ item.category }}</div>
+    {% endif %}
+    {% if item.classification_bororo %}
+    <div>Classification (Bororo): {{ item.classification_bororo }}</div>
+    {% endif %}
+    {% if item.info %}
+    <div class="item-info">{{ item.info }}</div>
+    {% endif %}
+    {% if item.pic_link %}
+    <div><img src="{{ item.pic_link }}" alt="{{ item.name_bororo }}"></div>
+    {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

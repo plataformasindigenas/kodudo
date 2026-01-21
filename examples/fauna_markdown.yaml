@@ -1,0 +1,5 @@
+input: fauna_with_meta.json
+template: ../templates/markdown/fauna_list.md.j2
+output: ../output/fauna.md
+context:
+  title: "Fauna Bororo"

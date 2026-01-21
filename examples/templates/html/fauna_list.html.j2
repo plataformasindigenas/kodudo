@@ -1,0 +1,27 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ title }} - Fauna{% endblock %}
+
+{% block content %}
+<div class="metadata">
+    <p><strong>Description:</strong> {{ meta.description }}</p>
+    <p><strong>Total Entries:</strong> {{ data | length }}</p>
+</div>
+
+<h2>Animals</h2>
+
+<ul>
+{% for item in data %}
+    <li>
+        <strong>{{ item.name_bororo }}</strong>
+        {% if item.name_portuguese %}
+            &mdash; {{ item.name_portuguese }}
+        {% endif %}
+        {% if item.scientific_name %}
+            (<em>{{ item.scientific_name }}</em>)
+        {% endif %}
+        <span style="font-size: 0.8em; color: #888;">[{{ item.category }}]</span>
+    </li>
+{% endfor %}
+</ul>
+{% endblock %}

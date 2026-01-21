@@ -1,0 +1,11 @@
+name: kodudo_config
+description: Kodudo rendering configuration
+version: "1.0"
+
+fields:
+  input: str
+  template: str
+  output: str
+  format: str[html|markdown|text]?
+  template_dirs: list[str]?
+  context_file: str?

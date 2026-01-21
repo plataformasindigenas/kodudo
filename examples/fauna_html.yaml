@@ -1,0 +1,6 @@
+input: fauna_with_meta.json
+template: ../templates/html/fauna_list.html.j2
+output: ../output/fauna.html
+context:
+  title: "Fauna Bororo"
+  lang: "pt-BR"

@@ -1,0 +1,31 @@
+# {{ title }}
+
+Total: {{ data | length }} entries
+
+{% for item in data %}
+## {{ item.name_bororo }}
+
+{% if item.name_portuguese %}- **Portuguese**: {{ item.name_portuguese }}
+{% endif %}
+{% if item.scientific_name %}- **Scientific**: _{{ item.scientific_name }}_
+{% endif %}
+{% if item.category %}- **Category**: {{ item.category }}
+{% endif %}
+{% if item.classification_bororo %}- **Classification (Bororo)**: {{ item.classification_bororo }}
+{% endif %}
+{% if item.info %}
+
+{{ item.info }}
+{% endif %}
+{% if item.pic_link %}
+
+![{{ item.name_bororo }}]({{ item.pic_link }})
+{% endif %}
+
+---
+
+{% endfor %}
+
+{% if meta.schema_name %}
+_Schema: {{ meta.schema_name }}{% if meta.version %} v{{ meta.version }}{% endif %}_
+{% endif %}

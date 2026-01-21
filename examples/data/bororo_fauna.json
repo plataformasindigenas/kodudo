@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "name": "bororo_fauna",
+    "description": "List of fauna names in Bororo language with translations",
+    "version": "1.0",
+    "fields": {
+      "name_bororo": "str",
+      "name_portuguese": "str?",
+      "scientific_name": "str?",
+      "category": "str[bird|mammal|fish|reptile|insect]"
+    }
+  },
+  "data": [
+    {
+      "name_bororo": "Awu",
+      "name_portuguese": "Anta",
+      "scientific_name": "Tapirus terrestris",
+      "category": "mammal"
+    },
+    {
+      "name_bororo": "Kogo",
+      "name_portuguese": "Onça-pintada",
+      "scientific_name": "Panthera onca",
+      "category": "mammal"
+    },
+    {
+      "name_bororo": "Arigao",
+      "name_portuguese": "Cachorro-do-mato",
+      "scientific_name": "Cerdocyon thous",
+      "category": "mammal"
+    },
+    {
+      "name_bororo": "Tagu",
+      "name_portuguese": "Tucano",
+      "scientific_name": "Ramphastos toco",
+      "category": "bird"
+    },
+    {
+      "name_bororo": "Poboko",
+      "name_portuguese": "Veado-campeiro",
+      "scientific_name": "Ozotoceros bezoarticus",
+      "category": "mammal"
+    }
+  ]
+}
