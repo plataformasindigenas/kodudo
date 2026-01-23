@@ -1,6 +1,6 @@
 # Kodudo Documentation
 
-**Version 0.1.0**
+**Version 0.1.1**
 
 Kodudo ("to cook" in Bororo) is a minimal template rendering tool designed to work seamlessly with [aptoro](https://github.com/plataformasindigenas/aptoro). It takes validated data and "cooks" it into various document formats like HTML, Markdown, and plain text using Jinja2 templates.
 
