@@ -1,8 +1,8 @@
 """Kodudo CLI.
 
 Usage:
-    kodudo cook <config.yaml>
-    python -m kodudo cook <config.yaml>
+    kodudo cook <config.yaml> ...
+    python -m kodudo cook <config.yaml> ...
 """
 
 import argparse
@@ -24,23 +24,28 @@ def main() -> int:
 
     # Cook command
     cook_parser = subparsers.add_parser("cook", help="Render data using a config file")
-    cook_parser.add_argument("config", type=Path, help="Path to YAML configuration file")
+    cook_parser.add_argument(
+        "configs", type=Path, nargs="+", help="Path to YAML configuration file(s)"
+    )
 
     args = parser.parse_args()
 
     if args.command == "cook":
-        config_path = args.config
-        if not config_path.exists():
-            print(f"Error: Config file not found: {config_path}", file=sys.stderr)
-            return 1
+        exit_code = 0
+        for config_path in args.configs:
+            if not config_path.exists():
+                print(f"Error: Config file not found: {config_path}", file=sys.stderr)
+                exit_code = 1
+                continue
 
-        try:
-            output_path = cook(config_path)
-            print(f"Cooked: {output_path}")
-            return 0
-        except KodudoError as e:
-            print(f"Error: {e}", file=sys.stderr)
-            return 1
+            try:
+                output_path = cook(config_path)
+                print(f"Cooked: {output_path}")
+            except KodudoError as e:
+                print(f"Error processing {config_path}: {e}", file=sys.stderr)
+                exit_code = 1
+
+        return exit_code
 
     if args.command is None:
         parser.print_help()

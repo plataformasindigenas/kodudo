@@ -66,6 +66,14 @@ Run the command:
 kodudo cook config.yaml
 ```
 
+You can also cook multiple configurations at once:
+
+```bash
+kodudo cook config1.yaml config2.yaml
+# or
+kodudo cook configs/*.yaml
+```
+
 ### 2. The Python Way
 
 ```python
