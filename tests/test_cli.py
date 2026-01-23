@@ -1,18 +1,21 @@
 import sys
+from collections.abc import Generator
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import pytest
+
 from kodudo.__main__ import main
 from kodudo.errors import KodudoError
 
 
 @pytest.fixture
-def mock_cook():
+def mock_cook() -> Generator[MagicMock, None, None]:
     with patch("kodudo.__main__.cook") as mock:
         yield mock
 
 
-def test_cli_cook_single_file(mock_cook, tmp_path):
+def test_cli_cook_single_file(mock_cook: MagicMock, tmp_path: Path) -> None:
     """Test cooking a single file."""
     config = tmp_path / "config.yaml"
     config.touch()
@@ -25,7 +28,7 @@ def test_cli_cook_single_file(mock_cook, tmp_path):
     mock_cook.assert_called_once_with(config)
 
 
-def test_cli_cook_multiple_files(mock_cook, tmp_path):
+def test_cli_cook_multiple_files(mock_cook: MagicMock, tmp_path: Path) -> None:
     """Test cooking multiple files."""
     config1 = tmp_path / "config1.yaml"
     config2 = tmp_path / "config2.yaml"
@@ -42,7 +45,7 @@ def test_cli_cook_multiple_files(mock_cook, tmp_path):
     mock_cook.assert_any_call(config2)
 
 
-def test_cli_cook_missing_file(mock_cook, tmp_path):
+def test_cli_cook_missing_file(mock_cook: MagicMock, tmp_path: Path) -> None:
     """Test behavior when a file is missing."""
     config1 = tmp_path / "existing.yaml"
     config1.touch()
@@ -57,7 +60,7 @@ def test_cli_cook_missing_file(mock_cook, tmp_path):
     mock_cook.assert_called_once_with(config1)
 
 
-def test_cli_cook_processing_error(mock_cook, tmp_path):
+def test_cli_cook_processing_error(mock_cook: MagicMock, tmp_path: Path) -> None:
     """Test behavior when processing fails for one file."""
     config1 = tmp_path / "good.yaml"
     config2 = tmp_path / "bad.yaml"
@@ -67,7 +70,7 @@ def test_cli_cook_processing_error(mock_cook, tmp_path):
     config2.touch()
     config3.touch()
 
-    def side_effect(path):
+    def side_effect(path: Path) -> Path:
         if path.name == "bad.yaml":
             raise KodudoError("Processing failed")
         return Path("output.html")
