@@ -15,6 +15,8 @@ It is a minimal, functional Python tool that cooks your data into documents usin
 - **Jinja2 Powered:** Leverage the full power of Jinja2 templates, inheritance, and macros.
 - **Configuration over Code:** Define complex rendering pipelines in simple YAML files.
 - **Context Aware:** Automatically injects metadata, configuration, and custom context into templates.
+- **Multi-Output:** Render multiple output files from a single config with `outputs`.
+- **Per-Record Rendering:** Generate one file per data record with `foreach` and path interpolation.
 - **Multi-Format:** Output to HTML, Markdown, text, or any text-based format.
 
 ## Installation
@@ -44,19 +46,22 @@ kodudo cook configs/*.yaml
 import kodudo
 
 # Cook using a config file (same as CLI)
-kodudo.cook("config.yaml")
+paths = kodudo.cook("config.yaml")
 
-# Or programmatically
-data = [
-    {"name": "Alice", "role": "Admin"},
-    {"name": "Bob", "role": "User"}
-]
+# Cook with runtime overrides (no temp files needed)
+batch = kodudo.load_config("config.yaml")
+for locale in ("pt", "en"):
+    kodudo.cook_from_config(
+        batch.config,
+        context={"lang": locale},
+        output=f"docs/{locale}/page.html",
+    )
 
 # Render directly to a string
 html = kodudo.render(
-    data=data,
+    data=[{"name": "Alice"}, {"name": "Bob"}],
     template="templates/users.html.j2",
-    context={"title": "User List"}
+    context={"title": "User List"},
 )
 ```
 
@@ -69,17 +74,31 @@ For full details on configuration options, template variables, and data formats,
 Define your rendering process in a YAML configuration file:
 
 ```yaml
-# config.yaml
-input: data/records.json       # Path to data (JSON with aptoro metadata or plain list)
-template: templates/page.html.j2 # Path to Jinja2 template
-output: output/page.html       # Where to write the result
-
-# Optional settings
-format: html                   # html, markdown, or text (inferred if missing)
-context_file: context.yaml     # Load extra variables from a file
-context:                       # Inline extra variables
+# Single output
+input: data/records.json
+template: templates/page.html.j2
+output: output/page.html
+context:
   title: "My Documents"
-  author: "Tiago"
+```
+
+```yaml
+# Multi-output (e.g., locales)
+input: data/records.json
+template: templates/page.html.j2
+outputs:
+  - output: en/page.html
+    context: { lang: en }
+  - output: pt/page.html
+    context: { lang: pt }
+```
+
+```yaml
+# Per-record rendering
+input: data/articles.json
+template: templates/article.html.j2
+output: articles/{article.slug}.html
+foreach: article
 ```
 
 ## Supported Formats

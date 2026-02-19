@@ -35,7 +35,7 @@ from kodudo.errors import ConfigError, DataError, KodudoError, RenderError
 from kodudo.rendering import create_environment
 from kodudo.rendering import render as _render
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 __all__ = [
     # Main functions
