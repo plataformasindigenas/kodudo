@@ -21,7 +21,7 @@ def test_cli_cook_single_file(mock_cook: MagicMock, tmp_path: Path) -> None:
     config.touch()
 
     with patch.object(sys, "argv", ["kodudo", "cook", str(config)]):
-        mock_cook.return_value = Path("output.html")
+        mock_cook.return_value = [Path("output.html")]
         exit_code = main()
 
     assert exit_code == 0
@@ -36,7 +36,7 @@ def test_cli_cook_multiple_files(mock_cook: MagicMock, tmp_path: Path) -> None:
     config2.touch()
 
     with patch.object(sys, "argv", ["kodudo", "cook", str(config1), str(config2)]):
-        mock_cook.return_value = Path("output.html")
+        mock_cook.return_value = [Path("output.html")]
         exit_code = main()
 
     assert exit_code == 0
@@ -52,7 +52,7 @@ def test_cli_cook_missing_file(mock_cook: MagicMock, tmp_path: Path) -> None:
     config2 = tmp_path / "missing.yaml"
 
     with patch.object(sys, "argv", ["kodudo", "cook", str(config1), str(config2)]):
-        mock_cook.return_value = Path("output.html")
+        mock_cook.return_value = [Path("output.html")]
         exit_code = main()
 
     assert exit_code == 1
@@ -70,10 +70,10 @@ def test_cli_cook_processing_error(mock_cook: MagicMock, tmp_path: Path) -> None
     config2.touch()
     config3.touch()
 
-    def side_effect(path: Path) -> Path:
+    def side_effect(path: Path) -> list[Path]:
         if path.name == "bad.yaml":
             raise KodudoError("Processing failed")
-        return Path("output.html")
+        return [Path("output.html")]
 
     mock_cook.side_effect = side_effect
 

@@ -28,6 +28,7 @@ class Config:
     context_file: Path | None = None
     context: dict[str, Any] | None = None
     base_path: Path | None = None
+    foreach: str | None = None
 
     def get_format(self) -> str:
         """Return format, inferring from template extension if needed."""

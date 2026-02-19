@@ -21,7 +21,14 @@ from typing import Any
 
 import yaml
 
-from kodudo.config import Config, load_config
+from kodudo.config import (
+    BatchConfig,
+    Config,
+    OutputSpec,
+    expand_config,
+    interpolate_path,
+    load_config,
+)
 from kodudo.data import LoadedData, load_data
 from kodudo.errors import ConfigError, DataError, KodudoError, RenderError
 from kodudo.rendering import create_environment
@@ -38,8 +45,13 @@ __all__ = [
     "load_config",
     "load_data",
     # Types
+    "BatchConfig",
     "Config",
     "LoadedData",
+    "OutputSpec",
+    # Expansion
+    "expand_config",
+    "interpolate_path",
     # Errors
     "KodudoError",
     "ConfigError",
@@ -48,7 +60,7 @@ __all__ = [
 ]
 
 
-def cook(config_path: str | Path) -> Path:
+def cook(config_path: str | Path) -> list[Path]:
     """Cook data according to a config file.
 
     Loads config, data, renders template, writes output.
@@ -57,33 +69,59 @@ def cook(config_path: str | Path) -> Path:
         config_path: Path to YAML config file
 
     Returns:
-        Path to the output file
+        List of output file paths
 
     Raises:
         ConfigError: If config is invalid
         DataError: If data cannot be loaded
         RenderError: If template rendering fails
     """
-    config = load_config(config_path)
-    return cook_from_config(config)
+    batch = load_config(config_path)
+    return cook_from_config(batch.config, outputs=batch.outputs)
 
 
-def cook_from_config(config: Config) -> Path:
+def cook_from_config(
+    config: Config,
+    *,
+    outputs: tuple[OutputSpec, ...] | None = None,
+) -> list[Path]:
     """Cook data using a Config object.
 
     Args:
         config: Configuration object
+        outputs: Optional output specs for multi-output rendering
 
     Returns:
-        Path to the output file
+        List of output file paths
 
     Raises:
         DataError: If data cannot be loaded
         RenderError: If template rendering fails
     """
-    # Load data
+    # Load data once
     loaded = load_data(config.resolved_input)
 
+    # Expand config into concrete instances
+    expanded = expand_config(config, outputs=outputs, data=loaded.raw)
+
+    result_paths: list[Path] = []
+    for cfg in expanded:
+        output_path = _cook_single(cfg, loaded)
+        result_paths.append(output_path)
+
+    return result_paths
+
+
+def _cook_single(config: Config, loaded: LoadedData) -> Path:
+    """Cook a single concrete config with pre-loaded data.
+
+    Args:
+        config: Concrete single-output Config
+        loaded: Pre-loaded data
+
+    Returns:
+        Path to the output file
+    """
     # Merge context from file and inline
     context: dict[str, Any] = {}
     if config.resolved_context_file:

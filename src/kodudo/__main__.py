@@ -39,8 +39,9 @@ def main() -> int:
                 continue
 
             try:
-                output_path = cook(config_path)
-                print(f"Cooked: {output_path}")
+                output_paths = cook(config_path)
+                for output_path in output_paths:
+                    print(f"Cooked: {output_path}")
             except KodudoError as e:
                 print(f"Error processing {config_path}: {e}", file=sys.stderr)
                 exit_code = 1

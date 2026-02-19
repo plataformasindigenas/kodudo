@@ -32,9 +32,9 @@ def test_cook_full_flow(tmp_path: Path) -> None:
         yaml.dump(config_data, f)
 
     # Run cook
-    result_path = cook(config_file)
+    result_paths = cook(config_file)
 
-    assert result_path == output_file
+    assert result_paths == [output_file]
     assert output_file.exists()
     assert output_file.read_text(encoding="utf-8") == "<h1>Test</h1>"
 
@@ -99,3 +99,127 @@ def test_cook_missing_context_file(tmp_path: Path) -> None:
 
     with pytest.raises(KodudoError, match="Context file not found"):
         cook(config_file)
+
+
+def test_cook_outputs_list(tmp_path: Path) -> None:
+    """Test cooking with multiple outputs."""
+    data: list[dict[str, Any]] = [{"name": "Test"}]
+    data_file = tmp_path / "data.json"
+    with open(data_file, "w") as f:
+        json.dump(data, f)
+
+    template_file = tmp_path / "template.html.j2"
+    template_file.write_text("{{ lang }}: {{ data[0].name }}", encoding="utf-8")
+
+    config_data = {
+        "input": str(data_file.name),
+        "template": str(template_file.name),
+        "outputs": [
+            {"output": "en/index.html", "context": {"lang": "en"}},
+            {"output": "pt/index.html", "context": {"lang": "pt"}},
+        ],
+    }
+    config_file = tmp_path / "config.yaml"
+    with open(config_file, "w") as f:
+        yaml.dump(config_data, f)
+
+    result_paths = cook(config_file)
+
+    assert len(result_paths) == 2
+    assert result_paths[0] == tmp_path / "en" / "index.html"
+    assert result_paths[1] == tmp_path / "pt" / "index.html"
+    assert result_paths[0].read_text(encoding="utf-8") == "en: Test"
+    assert result_paths[1].read_text(encoding="utf-8") == "pt: Test"
+
+
+def test_cook_foreach(tmp_path: Path) -> None:
+    """Test cooking with foreach (per-record rendering)."""
+    data: list[dict[str, Any]] = [
+        {"slug": "hello", "title": "Hello World"},
+        {"slug": "bye", "title": "Goodbye"},
+    ]
+    data_file = tmp_path / "data.json"
+    with open(data_file, "w") as f:
+        json.dump(data, f)
+
+    template_file = tmp_path / "article.html.j2"
+    template_file.write_text("<h1>{{ article.title }}</h1>", encoding="utf-8")
+
+    config_data = {
+        "input": str(data_file.name),
+        "template": str(template_file.name),
+        "output": "{article.slug}.html",
+        "foreach": "article",
+    }
+    config_file = tmp_path / "config.yaml"
+    with open(config_file, "w") as f:
+        yaml.dump(config_data, f)
+
+    result_paths = cook(config_file)
+
+    assert len(result_paths) == 2
+    assert result_paths[0] == tmp_path / "hello.html"
+    assert result_paths[1] == tmp_path / "bye.html"
+    assert result_paths[0].read_text(encoding="utf-8") == "<h1>Hello World</h1>"
+    assert result_paths[1].read_text(encoding="utf-8") == "<h1>Goodbye</h1>"
+
+
+def test_cook_foreach_empty_data(tmp_path: Path) -> None:
+    """Test foreach with empty data produces no outputs."""
+    data: list[dict[str, Any]] = []
+    data_file = tmp_path / "data.json"
+    with open(data_file, "w") as f:
+        json.dump(data, f)
+
+    template_file = tmp_path / "article.html.j2"
+    template_file.write_text("<h1>{{ article.title }}</h1>", encoding="utf-8")
+
+    config_data = {
+        "input": str(data_file.name),
+        "template": str(template_file.name),
+        "output": "{article.slug}.html",
+        "foreach": "article",
+    }
+    config_file = tmp_path / "config.yaml"
+    with open(config_file, "w") as f:
+        yaml.dump(config_data, f)
+
+    result_paths = cook(config_file)
+    assert result_paths == []
+
+
+def test_cook_foreach_x_outputs(tmp_path: Path) -> None:
+    """Test Cartesian product of outputs x foreach."""
+    data: list[dict[str, Any]] = [
+        {"slug": "hello", "title": "Hello"},
+        {"slug": "bye", "title": "Bye"},
+    ]
+    data_file = tmp_path / "data.json"
+    with open(data_file, "w") as f:
+        json.dump(data, f)
+
+    template_file = tmp_path / "article.html.j2"
+    template_file.write_text(
+        "{{ lang }}: {{ article.title }}", encoding="utf-8"
+    )
+
+    config_data = {
+        "input": str(data_file.name),
+        "template": str(template_file.name),
+        "outputs": [
+            {"output": "en/{article.slug}.html", "context": {"lang": "en"}},
+            {"output": "pt/{article.slug}.html", "context": {"lang": "pt"}},
+        ],
+        "foreach": "article",
+    }
+    config_file = tmp_path / "config.yaml"
+    with open(config_file, "w") as f:
+        yaml.dump(config_data, f)
+
+    result_paths = cook(config_file)
+
+    assert len(result_paths) == 4
+    assert (tmp_path / "en" / "hello.html").read_text(encoding="utf-8") == "en: Hello"
+    assert (tmp_path / "en" / "bye.html").read_text(encoding="utf-8") == "en: Bye"
+    assert (tmp_path / "pt" / "hello.html").read_text(encoding="utf-8") == "pt: Hello"
+    assert (tmp_path / "pt" / "bye.html").read_text(encoding="utf-8") == "pt: Bye"
