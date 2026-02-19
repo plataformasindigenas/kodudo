@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 import yaml
 
-from kodudo import cook
+from kodudo import cook, cook_from_config, load_config
 from kodudo.errors import KodudoError
 
 
@@ -223,3 +223,116 @@ def test_cook_foreach_x_outputs(tmp_path: Path) -> None:
     assert (tmp_path / "en" / "bye.html").read_text(encoding="utf-8") == "en: Bye"
     assert (tmp_path / "pt" / "hello.html").read_text(encoding="utf-8") == "pt: Hello"
     assert (tmp_path / "pt" / "bye.html").read_text(encoding="utf-8") == "pt: Bye"
+
+
+def test_cook_from_config_context_override(tmp_path: Path) -> None:
+    """Test cook_from_config with context override."""
+    data: list[dict[str, Any]] = [{"name": "Test"}]
+    data_file = tmp_path / "data.json"
+    with open(data_file, "w") as f:
+        json.dump(data, f)
+
+    template_file = tmp_path / "template.html.j2"
+    template_file.write_text("{{ lang }}: {{ data[0].name }}", encoding="utf-8")
+
+    config_data = {
+        "input": str(data_file.name),
+        "template": str(template_file.name),
+        "output": "output.html",
+    }
+    config_file = tmp_path / "config.yaml"
+    with open(config_file, "w") as f:
+        yaml.dump(config_data, f)
+
+    batch = load_config(config_file)
+    result_paths = cook_from_config(batch.config, context={"lang": "en"})
+
+    assert result_paths == [tmp_path / "output.html"]
+    assert (tmp_path / "output.html").read_text(encoding="utf-8") == "en: Test"
+
+
+def test_cook_from_config_output_override(tmp_path: Path) -> None:
+    """Test cook_from_config with output path override."""
+    data: list[dict[str, Any]] = [{"name": "Test"}]
+    data_file = tmp_path / "data.json"
+    with open(data_file, "w") as f:
+        json.dump(data, f)
+
+    template_file = tmp_path / "template.html.j2"
+    template_file.write_text("<h1>{{ data[0].name }}</h1>", encoding="utf-8")
+
+    config_data = {
+        "input": str(data_file.name),
+        "template": str(template_file.name),
+        "output": "original.html",
+    }
+    config_file = tmp_path / "config.yaml"
+    with open(config_file, "w") as f:
+        yaml.dump(config_data, f)
+
+    batch = load_config(config_file)
+    result_paths = cook_from_config(batch.config, output="overridden.html")
+
+    assert result_paths == [tmp_path / "overridden.html"]
+    assert (tmp_path / "overridden.html").read_text(encoding="utf-8") == "<h1>Test</h1>"
+    assert not (tmp_path / "original.html").exists()
+
+
+def test_cook_from_config_context_merges_with_config(tmp_path: Path) -> None:
+    """Test that context override merges with config context."""
+    data: list[dict[str, Any]] = []
+    data_file = tmp_path / "data.json"
+    with open(data_file, "w") as f:
+        json.dump(data, f)
+
+    template_file = tmp_path / "template.html.j2"
+    template_file.write_text("{{ site }} {{ lang }}", encoding="utf-8")
+
+    config_data = {
+        "input": str(data_file.name),
+        "template": str(template_file.name),
+        "output": "output.html",
+        "context": {"site": "mysite", "lang": "default"},
+    }
+    config_file = tmp_path / "config.yaml"
+    with open(config_file, "w") as f:
+        yaml.dump(config_data, f)
+
+    batch = load_config(config_file)
+    # Override lang, keep site from config
+    cook_from_config(batch.config, context={"lang": "pt"})
+
+    assert (tmp_path / "output.html").read_text(encoding="utf-8") == "mysite pt"
+
+
+def test_cook_from_config_context_and_output_override(tmp_path: Path) -> None:
+    """Test cook_from_config with both context and output overrides."""
+    data: list[dict[str, Any]] = [{"name": "Test"}]
+    data_file = tmp_path / "data.json"
+    with open(data_file, "w") as f:
+        json.dump(data, f)
+
+    template_file = tmp_path / "template.html.j2"
+    template_file.write_text("{{ lang }}: {{ data[0].name }}", encoding="utf-8")
+
+    config_data = {
+        "input": str(data_file.name),
+        "template": str(template_file.name),
+        "output": "original.html",
+    }
+    config_file = tmp_path / "config.yaml"
+    with open(config_file, "w") as f:
+        yaml.dump(config_data, f)
+
+    batch = load_config(config_file)
+
+    # Simulate the locale loop pattern from the suggestion
+    for locale in ("pt", "en"):
+        cook_from_config(
+            batch.config,
+            context={"lang": locale},
+            output=f"docs/{locale}/fauna.html",
+        )
+
+    assert (tmp_path / "docs" / "pt" / "fauna.html").read_text(encoding="utf-8") == "pt: Test"
+    assert (tmp_path / "docs" / "en" / "fauna.html").read_text(encoding="utf-8") == "en: Test"

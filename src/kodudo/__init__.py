@@ -16,6 +16,7 @@ Example:
     ... )
 """
 
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -84,12 +85,16 @@ def cook_from_config(
     config: Config,
     *,
     outputs: tuple[OutputSpec, ...] | None = None,
+    context: dict[str, Any] | None = None,
+    output: str | Path | None = None,
 ) -> list[Path]:
     """Cook data using a Config object.
 
     Args:
         config: Configuration object
         outputs: Optional output specs for multi-output rendering
+        context: Optional context overrides (merged on top of config context)
+        output: Optional output path override
 
     Returns:
         List of output file paths
@@ -98,6 +103,17 @@ def cook_from_config(
         DataError: If data cannot be loaded
         RenderError: If template rendering fails
     """
+    # Apply call-site overrides
+    if context is not None or output is not None:
+        overrides: dict[str, Any] = {}
+        if output is not None:
+            overrides["output"] = Path(output)
+        if context is not None:
+            merged = dict(config.context or {})
+            merged.update(context)
+            overrides["context"] = merged
+        config = replace(config, **overrides)
+
     # Load data once
     loaded = load_data(config.resolved_input)
 
